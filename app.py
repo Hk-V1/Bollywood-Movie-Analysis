@@ -72,21 +72,18 @@ with col1:
     st.pyplot(fig1)
 
 # Top Tags
-with col2:
-    st.subheader("Top 10 Tags")
-    top_tags = (
-        df['top_relevant_tags'].value_counts()
-        .head(10)
-        .reset_index()
-        .rename(columns={'index': 'tag', 'top_relevant_tags': 'count'})
-    )
+st.subheader("Top 10 Tags")
+all_tags_series = df['top_relevant_tags'].dropna().apply(lambda x: [t.strip() for t in x.split(',')])
+flattened_tags = [tag for sublist in all_tags_series for tag in sublist]
+tag_counts = pd.Series(flattened_tags).value_counts().head(10).reset_index()
+tag_counts.columns = ['tag', 'count']
 
-    fig2, ax2 = plt.subplots()
-    sns.barplot(data=top_tags, x="count", y="tag", palette="mako", ax=ax2)
-    ax2.set_title("Most Frequent Tags")
-    ax2.set_xlabel("Count")
-    ax2.set_ylabel("Tag")
-    st.pyplot(fig2)
+fig2, ax2 = plt.subplots()
+sns.barplot(data=tag_counts, x="count", y="tag", palette="mako", ax=ax2)
+ax2.set_title("Most Frequent Tags")
+ax2.set_xlabel("Count")
+ax2.set_ylabel("Tag")
+st.pyplot(fig2)
 
 # Rating Distribution
 st.subheader("Rating Distribution")
