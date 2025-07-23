@@ -4,30 +4,32 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import re
 
 # --- Page Configuration ---
 st.set_page_config(page_title="Bollywood Movies Dashboard", layout="wide")
 
-# --- Load Data ---
+# --- Load and Prepare Data ---
 @st.cache_data
 def load_data():
     df = pd.read_csv("final_combined_movies.csv")
 
-    # Ensure release_year is numeric
+    # Extract year from title using regex
+    df['release_year'] = df['title'].str.extract(r"\((\d{4})\)", expand=False)
     df['release_year'] = pd.to_numeric(df['release_year'], errors='coerce')
 
     # Create decade column
     df['decade'] = (df['release_year'] // 10 * 10).astype('Int64').astype(str) + "s"
 
-    # Convert avg_rating to numeric (coerce invalid to NaN)
+    # Convert ratings
     df['avg_rating'] = pd.to_numeric(df['avg_rating'], errors='coerce')
-    
+
     return df
 
 df = load_data()
 
 st.title("Bollywood Movies Dashboard")
-st.markdown("Explore ratings, tags, and content trends in Bollywood cinema")
+st.markdown("Explore ratings, tags, and trends in Bollywood movies.")
 
 # --- Sidebar Filters ---
 st.sidebar.header("Filter Movies")
@@ -49,9 +51,10 @@ filtered_df = df[
 if selected_tags:
     filtered_df = filtered_df[filtered_df['top_relevant_tags'].isin(selected_tags)]
 
-# --- Main Plots ---
+# --- Layout Columns ---
 col1, col2 = st.columns(2)
 
+# Average Rating by Decade
 with col1:
     st.subheader("Average Rating by Decade")
     avg_rating = (
@@ -68,6 +71,7 @@ with col1:
     ax1.set_xlabel("Decade")
     st.pyplot(fig1)
 
+# Top Tags
 with col2:
     st.subheader("Top 10 Tags")
     top_tags = (
@@ -84,22 +88,21 @@ with col2:
     ax2.set_ylabel("Tag")
     st.pyplot(fig2)
 
-# --- Rating Distribution ---
+# Rating Distribution
 st.subheader("Rating Distribution")
 fig3, ax3 = plt.subplots()
 sns.histplot(filtered_df["avg_rating"], bins=20, kde=True, color="skyblue", ax=ax3)
 ax3.set_title("Distribution of Average Ratings")
 st.pyplot(fig3)
 
-# --- Show Filtered Data ---
+# Table of Filtered Movies
 st.subheader("Filtered Movies Data")
 st.dataframe(filtered_df[['title', 'release_year', 'avg_rating', 'top_relevant_tags']].reset_index(drop=True))
 
-# --- Download Option ---
+# Download CSV
 st.download_button(
     label="Download Filtered Data as CSV",
     data=filtered_df.to_csv(index=False).encode('utf-8'),
     file_name='filtered_bollywood_movies.csv',
     mime='text/csv'
 )
-
